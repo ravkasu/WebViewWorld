@@ -1,0 +1,226 @@
+<div class="studio-shell">
+  <header class="studio-header">
+    <a class="studio-brand" routerLink="/" aria-label="WebView World home">
+      <span class="studio-mark">w<span>w</span></span>
+      <span>webview<span class="brand-light">world</span></span>
+      <span class="brand-divider"></span>
+      <span class="brand-caption">YOUR WEBSITE STUDIO</span>
+    </a>
+    <div class="studio-header-right">
+      <span class="workspace-state"><span></span> Your workspace</span>
+      <span class="user-avatar" aria-label="Account">R</span>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <section class="dashboard-intro" aria-labelledby="dashboard-title">
+      <div>
+        <p class="dashboard-kicker"><span></span> YOUR CREATIVE HOME</p>
+        <h1 id="dashboard-title">Every website,<br /><em>in one place.</em></h1>
+        <p class="dashboard-subtitle">
+          Keep your little corners of the internet together.<br class="desktop-break" />
+          Make something new whenever inspiration strikes.
+        </p>
+      </div>
+      <button class="create-button" type="button" (click)="openCreateDialog()">
+        <span aria-hidden="true">＋</span> Create a website
+      </button>
+      <div class="intro-decoration" aria-hidden="true">✳</div>
+    </section>
+
+    <section class="workspace-summary" aria-label="Website summary">
+      <div class="summary-label">YOUR WORKSPACE <span>↘</span></div>
+      <div class="summary-stats">
+        <div>
+          <strong>{{ websites().length }}</strong><span>websites</span>
+        </div>
+        <div>
+          <strong>{{ liveCount() }}</strong><span>live</span>
+        </div>
+        <div>
+          <strong>{{ draftCount() }}</strong><span>in progress</span>
+        </div>
+      </div>
+      <div class="summary-note">
+        <span class="summary-sparkle">✳</span> Good things start somewhere.
+      </div>
+    </section>
+
+    <section class="website-library" aria-labelledby="library-title">
+      <div class="library-heading">
+        <div>
+          <p class="dashboard-kicker">THE LINEUP</p>
+          <h2 id="library-title">
+            Your websites <span>{{ websites().length }}</span>
+          </h2>
+        </div>
+        <span class="library-hint"
+          >Pick up where you left off <span aria-hidden="true">↗</span></span
+        >
+      </div>
+
+      <div class="website-filters" role="group" aria-label="Filter websites by category">
+        @for (filter of filters; track filter) {
+          <button
+            type="button"
+            [class.is-active]="activeFilter() === filter"
+            [attr.aria-pressed]="activeFilter() === filter"
+            (click)="setFilter(filter)"
+          >
+            {{ filter }}
+          </button>
+        }
+      </div>
+
+      @if (storageMessage()) {
+        <p class="storage-notice" role="status">{{ storageMessage() }}</p>
+      }
+
+      <div class="website-grid">
+        @for (website of visibleWebsites(); track website.id) {
+          @if (website.status === 'Live') {
+            <a class="website-card live-card" routerLink="/website-1">
+              <span class="website-preview">
+                <img [src]="website.cover" [alt]="website.name + ' website preview'" />
+                <span class="website-number">{{ websiteLabel(website) }}</span>
+                <span class="status-pill status-live"><i></i> LIVE</span>
+                <span class="card-arrow" aria-hidden="true">↗</span>
+              </span>
+              <span class="website-card-info">
+                <span>
+                  <span class="website-title">{{ website.name }}</span>
+                  <span class="website-description">{{ website.description }}</span>
+                </span>
+                <span class="website-card-footer">
+                  <span>{{ website.category }}</span>
+                  <span>Open website <b aria-hidden="true">↗</b></span>
+                </span>
+              </span>
+            </a>
+          } @else {
+            <article class="website-card draft-card">
+              <div class="website-preview">
+                <img [src]="website.cover" [alt]="website.name + ' website draft cover'" />
+                <span class="website-number">{{ websiteLabel(website) }}</span>
+                <span class="status-pill status-draft"><i></i> DRAFT</span>
+                <span class="card-sparkle" aria-hidden="true">✳</span>
+              </div>
+              <div class="website-card-info">
+                <div>
+                  <span class="website-title">{{ website.name }}</span>
+                  <span class="website-description">{{ website.description }}</span>
+                </div>
+                <div class="website-card-footer">
+                  <span>{{ website.category }}</span>
+                  <span class="website-actions">
+                    @if (website.url) {
+                      <a
+                        [href]="website.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        [attr.aria-label]="'Open ' + website.name + ' in a new tab'"
+                      >
+                        Open in new tab <b aria-hidden="true">↗</b>
+                      </a>
+                    }
+                    <button type="button" (click)="openEditDialog(website)">Edit <b>↗</b></button>
+                  </span>
+                </div>
+              </div>
+            </article>
+          }
+        }
+
+        <button class="add-website-card" type="button" (click)="openCreateDialog()">
+          <span class="add-website-icon">＋</span>
+          <span class="add-website-number">{{ nextWebsiteLabel() }} · NEXT UP</span>
+          <span class="add-website-title">Your next website</span>
+          <span class="add-website-copy">Give it a name and a category to start a new site.</span>
+          <span class="add-website-action">
+            Create {{ nextWebsiteLabel() }} <b aria-hidden="true">↗</b>
+          </span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="studio-footer">
+    <span><span class="footer-mini-mark">w</span> Make room for good ideas.</span>
+    <span>WEBVIEW WORLD <b>·</b> YOUR WEBSITE STUDIO</span>
+  </footer>
+</div>
+
+@if (createDialogOpen()) {
+  <div
+    class="website-dialog-backdrop"
+    (click)="closeDialog()"
+    (window:keydown.escape)="closeDialog()"
+  >
+    <section
+      class="website-dialog"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="editingId() ? 'Edit website details' : 'Create a website'"
+      (click)="$event.stopPropagation()"
+    >
+      <button class="dialog-close" type="button" aria-label="Close dialog" (click)="closeDialog()">
+        ×
+      </button>
+      <p class="dashboard-kicker"><span></span> MAKE A LITTLE SPACE</p>
+      <h2>{{ editingId() ? 'Make it yours.' : 'What are we making?' }}</h2>
+      <p class="dialog-intro">
+        {{
+          editingId()
+            ? 'Update your website card details.'
+            : 'Start with a name. You can change the details anytime.'
+        }}
+      </p>
+
+      <form (submit)="saveWebsite($event)">
+        <label for="website-name">Website name</label>
+        <input
+          id="website-name"
+          type="text"
+          placeholder="e.g. Sunday Studio"
+          [value]="draftName"
+          (input)="updateDraftName($event)"
+          required
+          maxlength="40"
+          autofocus
+        />
+        <label for="website-url">Website link <span class="optional-label">OPTIONAL</span></label>
+        <input
+          id="website-url"
+          type="url"
+          placeholder="https://your-site.com"
+          [value]="draftUrl"
+          (input)="updateDraftUrl($event)"
+          autocomplete="url"
+        />
+        <p class="field-help">Add the published link to open this website in a new tab.</p>
+        <label for="website-category">What kind of website?</label>
+        <select
+          id="website-category"
+          [value]="draftCategory"
+          (change)="updateDraftCategory($event)"
+        >
+          @for (category of categories; track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
+        @if (storageMessage()) {
+          <p class="dialog-error" role="alert">{{ storageMessage() }}</p>
+        }
+        @if (formError()) {
+          <p class="dialog-error" role="alert">{{ formError() }}</p>
+        }
+        <div class="dialog-actions">
+          <button class="cancel-button" type="button" (click)="closeDialog()">Not now</button>
+          <button class="create-button dialog-submit" type="submit" [disabled]="!draftName.trim()">
+            {{ editingId() ? 'Save changes' : 'Create website' }} <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
