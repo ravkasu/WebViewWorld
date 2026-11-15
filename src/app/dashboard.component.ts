@@ -35,10 +35,12 @@ export class DashboardPage {
   protected readonly createDialogOpen = signal(false);
   protected readonly storageMessage = signal<string | null>(null);
   protected readonly formError = signal<string | null>(null);
+  protected readonly thumbnailLoading = signal(false);
   protected readonly editingId = signal<string | null>(null);
   protected draftName = '';
   protected draftCategory: WebsiteCategory = 'Portfolio';
   protected draftUrl = '';
+  protected draftThumbnail: string | null = null;
   protected readonly createdWebsites = signal(this.loadWebsites());
 
   protected readonly currentWebsite: Website = {
@@ -71,6 +73,7 @@ export class DashboardPage {
     this.draftName = '';
     this.draftCategory = 'Portfolio';
     this.draftUrl = '';
+    this.draftThumbnail = null;
     this.formError.set(null);
     this.createDialogOpen.set(true);
   }
@@ -80,6 +83,7 @@ export class DashboardPage {
     this.draftName = website.name;
     this.draftCategory = website.category;
     this.draftUrl = website.url ?? '';
+    this.draftThumbnail = website.cover;
     this.formError.set(null);
     this.createDialogOpen.set(true);
   }
@@ -102,6 +106,41 @@ export class DashboardPage {
 
   protected updateDraftUrl(event: Event): void {
     this.draftUrl = (event.target as HTMLInputElement).value;
+  }
+
+  protected async updateDraftThumbnail(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    this.formError.set(null);
+    if (!file.type.startsWith('image/')) {
+      this.formError.set('Choose an image file to use as your website thumbnail.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      this.formError.set('Choose an image smaller than 8 MB.');
+      input.value = '';
+      return;
+    }
+
+    try {
+      this.thumbnailLoading.set(true);
+      this.draftThumbnail = await this.createThumbnail(file);
+    } catch (error) {
+      console.error('Unable to prepare the website thumbnail.', error);
+      this.formError.set('This image could not be opened. Try a different image file.');
+      input.value = '';
+    } finally {
+      this.thumbnailLoading.set(false);
+    }
+  }
+
+  protected removeDraftThumbnail(): void {
+    this.draftThumbnail = null;
   }
 
   protected saveWebsite(event: Event): void {
@@ -127,7 +166,7 @@ export class DashboardPage {
               ...website,
               name,
               category: this.draftCategory,
-              cover: this.coverFor(this.draftCategory),
+              cover: this.draftThumbnail ?? this.coverFor(this.draftCategory),
               url,
             }
           : website,
@@ -139,15 +178,17 @@ export class DashboardPage {
         name,
         category: this.draftCategory,
         status: 'Draft',
-        cover: this.coverFor(this.draftCategory),
+        cover: this.draftThumbnail ?? this.coverFor(this.draftCategory),
         description: `A new ${this.draftCategory.toLowerCase()} website, ready for your ideas.`,
         url,
       };
       updatedWebsites = [...this.createdWebsites(), newWebsite];
     }
 
+    if (!this.persistWebsites(updatedWebsites)) {
+      return;
+    }
     this.createdWebsites.set(updatedWebsites);
-    this.persistWebsites(updatedWebsites);
     this.closeDialog();
   }
 
@@ -169,6 +210,39 @@ export class DashboardPage {
       Other: 'images/project-light.jpg',
     };
     return covers[category];
+  }
+
+  private createThumbnail(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('The image file could not be read.'));
+      reader.onload = () => {
+        if (typeof reader.result !== 'string') {
+          reject(new Error('The image file did not produce image data.'));
+          return;
+        }
+
+        const image = new Image();
+        image.onerror = () => reject(new Error('The selected file is not a readable image.'));
+        image.onload = () => {
+          const scale = Math.min(1, 1200 / Math.max(image.naturalWidth, image.naturalHeight));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+          const context = canvas.getContext('2d');
+          if (!context) {
+            reject(new Error('Image processing is unavailable in this browser.'));
+            return;
+          }
+
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        image.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   private normalizeWebsiteUrl(value: string): string {
@@ -231,13 +305,15 @@ export class DashboardPage {
     );
   }
 
-  private persistWebsites(websites: Website[]): void {
+  private persistWebsites(websites: Website[]): boolean {
     try {
       localStorage.setItem('webviewworld.websites', JSON.stringify(websites));
       this.storageMessage.set(null);
+      return true;
     } catch (error) {
       console.error('Unable to save website changes.', error);
       this.storageMessage.set('This website card could not be saved in your browser.');
+      return false;
     }
   }
 }

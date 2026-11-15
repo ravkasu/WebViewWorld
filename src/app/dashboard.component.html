@@ -177,6 +177,49 @@
       </p>
 
       <form (submit)="saveWebsite($event)">
+        <label for="website-thumbnail"
+          >Thumbnail image <span class="optional-label">OPTIONAL</span></label
+        >
+        <div class="thumbnail-picker">
+          @if (draftThumbnail) {
+            <img
+              class="thumbnail-preview"
+              [src]="draftThumbnail"
+              alt="Selected website thumbnail preview"
+            />
+          } @else {
+            <span class="thumbnail-placeholder" aria-hidden="true">✳</span>
+          }
+          <div class="thumbnail-picker-copy">
+            <strong>
+              @if (thumbnailLoading()) {
+                Preparing thumbnail…
+              } @else {
+                {{ draftThumbnail ? 'Thumbnail selected' : 'Choose a cover image' }}
+              }
+            </strong>
+            <span>JPG, PNG, or WebP · up to 8 MB</span>
+          </div>
+          <input
+            class="thumbnail-file-input"
+            id="website-thumbnail"
+            type="file"
+            accept="image/*"
+            aria-label="Upload website thumbnail"
+            (change)="updateDraftThumbnail($event)"
+          />
+          <label class="upload-button" for="website-thumbnail">Browse</label>
+          @if (draftThumbnail) {
+            <button
+              class="remove-thumbnail"
+              type="button"
+              aria-label="Remove selected thumbnail"
+              (click)="removeDraftThumbnail()"
+            >
+              ×
+            </button>
+          }
+        </div>
         <label for="website-name">Website name</label>
         <input
           id="website-name"
@@ -216,7 +259,11 @@
         }
         <div class="dialog-actions">
           <button class="cancel-button" type="button" (click)="closeDialog()">Not now</button>
-          <button class="create-button dialog-submit" type="submit" [disabled]="!draftName.trim()">
+          <button
+            class="create-button dialog-submit"
+            type="submit"
+            [disabled]="!draftName.trim() || thumbnailLoading()"
+          >
             {{ editingId() ? 'Save changes' : 'Create website' }} <span aria-hidden="true">↗</span>
           </button>
         </div>

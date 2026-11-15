@@ -1949,6 +1949,96 @@ a.website-card:hover,
   font-weight: 700;
 }
 
+.thumbnail-picker {
+  position: relative;
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 36px 9px 10px;
+  border: 1px dashed #d1d2c8;
+  background: #f4f4ee;
+}
+
+.thumbnail-preview {
+  width: 58px;
+  height: 54px;
+  flex: 0 0 auto;
+  object-fit: cover;
+}
+
+.thumbnail-placeholder {
+  display: grid;
+  width: 58px;
+  height: 54px;
+  flex: 0 0 auto;
+  place-items: center;
+  background: #e7e9dd;
+  color: #788a4d;
+  font-size: 22px;
+}
+
+.thumbnail-picker-copy {
+  display: grid;
+  flex: 1;
+  gap: 5px;
+}
+
+.thumbnail-picker-copy strong {
+  font-size: 9px;
+}
+
+.thumbnail-picker-copy > span {
+  color: #77796f;
+  font-size: 8px;
+}
+
+.upload-button {
+  display: grid;
+  min-height: 30px;
+  align-items: center;
+  margin: 0 !important;
+  padding: 0 10px;
+  border: 1px solid #d5d6cc;
+  background: #fff;
+  cursor: pointer;
+  font-size: 8px !important;
+}
+
+.upload-button:hover {
+  border-color: #8ca15c;
+}
+
+.thumbnail-file-input {
+  position: absolute;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.thumbnail-file-input:focus-visible ~ .upload-button {
+  outline: 2px solid #8ca15c;
+  outline-offset: 3px;
+}
+
+.remove-thumbnail {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid #d5d6cc;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
 .optional-label {
   margin-left: 5px;
   color: #85877c;

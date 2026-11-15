@@ -10,7 +10,7 @@ npm start
 ```
 
 Open `http://localhost:4200/` for the dashboard. The current live Website 1 portfolio is available at `http://localhost:4200/website-1`.
-New website cards can include an optional `http://` or `https://` link, which opens in a new tab.
+New website cards can include an optional `http://` or `https://` link, which opens in a new tab. You can also upload a thumbnail image; it is resized in the browser and saved with the website card.
 
 ## Build and test
 

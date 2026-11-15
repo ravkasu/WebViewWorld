@@ -1,8 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 import { DashboardPage } from './dashboard.component';
 
 describe('DashboardPage', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   beforeEach(async () => {
     localStorage.clear();
     await TestBed.configureTestingModule({
@@ -76,5 +82,57 @@ describe('DashboardPage', () => {
       'starting with http:// or https://',
     );
     expect(JSON.parse(localStorage.getItem('webviewworld.websites') ?? '[]')).toHaveLength(0);
+  });
+
+  it('creates a compact thumbnail from an uploaded image and saves it with the website', async () => {
+    class MockImage {
+      naturalWidth = 1600;
+      naturalHeight = 1200;
+      onload: ((event: Event) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+
+      set src(_value: string) {
+        this.onload?.(new Event('load'));
+      }
+    }
+
+    vi.stubGlobal('Image', MockImage);
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+      'data:image/jpeg;base64,thumbnail',
+    );
+
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    compiled.querySelector<HTMLButtonElement>('.create-button')?.click();
+    fixture.detectChanges();
+    compiled.querySelector<HTMLInputElement>('#website-name')!.value = 'Photo Studio';
+    compiled
+      .querySelector<HTMLInputElement>('#website-name')!
+      .dispatchEvent(new Event('input', { bubbles: true }));
+
+    const fileInput = compiled.querySelector<HTMLInputElement>('#website-thumbnail')!;
+    const imageFile = new File(['image'], 'cover.png', { type: 'image/png' });
+    Object.defineProperty(fileInput, 'files', { value: [imageFile], configurable: true });
+    await fixture.componentInstance['updateDraftThumbnail']({
+      target: fileInput,
+    } as unknown as Event);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    compiled
+      .querySelector<HTMLFormElement>('form')
+      ?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    const thumbnail = compiled.querySelector<HTMLImageElement>('.draft-card .website-preview img');
+    expect(thumbnail?.getAttribute('src')).toBe('data:image/jpeg;base64,thumbnail');
+    expect(JSON.parse(localStorage.getItem('webviewworld.websites') ?? '[]')[0].cover).toBe(
+      'data:image/jpeg;base64,thumbnail',
+    );
   });
 });
